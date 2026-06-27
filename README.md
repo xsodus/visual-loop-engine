@@ -1,4 +1,4 @@
-# tos-mac-app-ai-workflow
+# Tree of Savior Extreme TH Mac App - AI workflow
 
 Shared AI agent skills and harness configs for the Tree of Savior Extreme app workflow only.
 
