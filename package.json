@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "nemo": "node scripts/nemo.mjs",
-    "install:skills": "node scripts/nemo.mjs symlink"
+    "install:skills": "node scripts/nemo.mjs symlink",
+    "tos": "node --experimental-strip-types src/cli.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
   },
   "keywords": [],
   "author": "",

@@ -37,3 +37,20 @@ Current skills:
 - `launch-tree-of-savior-m-extreme`
 
 Each skill lives under `skills/<skill-name>/SKILL.md` and should stay specific to Tree of Savior Extreme use cases.
+
+## macOS Controller
+
+The TypeScript controller provides the low-level interface used by the game loop:
+
+```bash
+pnpm tos launch
+pnpm tos screenshot artifacts/tos-screen.png
+pnpm tos click 640 420
+pnpm test
+```
+
+The terminal or Codex process running these commands needs macOS Accessibility
+permission for keyboard and mouse control, plus Screen Recording permission for
+screenshots. `src/game-loop.ts` keeps visual state detection behind `GameAdapter`;
+the next adapter can use screenshots or recorded UI events without changing the
+quest-loop safety rules.
