@@ -104,13 +104,16 @@ capturing and acting until the explicit exhaustion check below succeeds.
 6. If the game offers multiple fellows, choose the previously used or clearly recommended fellow. Do not purchase, fuse, dismiss, delete, or upgrade fellows unless the user explicitly asks.
 7. If no fellow can be safely selected, continue the quest loop without one and mention that no fellow was available.
 8. Before activating each new main or sub quest, open or inspect the auto-potion
-   controls and confirm that automatic potion use is enabled, each supported
-   recovery slot has an appropriate available potion assigned, the assigned
-   stack is not empty, and the trigger threshold is visibly set rather than
-   disabled. Preserve an existing working threshold; if a threshold is unset,
-   use the game's default or clearly recommended value. Capture a fresh
-   screenshot after any change and verify the enabled state, assignments,
-   quantities, and thresholds before closing the controls.
+   controls and confirm that automatic potion use is enabled. Auto-potion slots
+   are accessed by clicking the potion bottle icons on the left edge of the
+   skill bar (bottom-right area of the screen). Only slot one (the top-left
+   slot) is configurable. Eligible items are marked with Roman numerals I–VI.
+   Assign an available I–VI potion to slot one if it is empty, confirm the
+   stack is not empty, and verify the trigger threshold is visibly set rather
+   than disabled. Preserve an existing working threshold; if a threshold is
+   unset, use the game's default or clearly recommended value. Capture a fresh
+   screenshot after any change and verify the enabled state, assignment,
+   quantity, and threshold before closing the controls.
 9. Re-run the auto-potion check even if it passed for the previous quest.
    Re-check it after recovery, character reload, or any map/session transition.
    Do not activate the new quest until the check passes. Use potions already in
