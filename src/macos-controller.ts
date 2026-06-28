@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { mkdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname } from "node:path";
 import { promisify } from "node:util";
 
@@ -28,11 +29,26 @@ export type MacAutomationPermissions = {
   accessibility: boolean;
   screenRecording: boolean;
   screenshotPath: string;
+  diagnostics: {
+    accessibilityCheck: string;
+    accessibilityError?: string;
+    screenRecordingCheck: string;
+    screenRecordingError?: string;
+    runtimeHosts: {
+      node: string;
+      osascript: string;
+      swift: string;
+      screencapture: string;
+    };
+  };
 };
 
 const APPLE_SCRIPT_MODIFIERS = new Set(["command", "control", "option", "shift"]);
 const WINDOW_QUERY_ATTEMPTS = 3;
 const WINDOW_QUERY_RETRY_DELAY_MS = 500;
+const OSASCRIPT_PATH = "/usr/bin/osascript";
+const SWIFT_PATH = "/usr/bin/swift";
+const SCREEN_CAPTURE_PATH = "/usr/sbin/screencapture";
 
 export class MacAppController {
   readonly commandTimeoutMs: number;
@@ -194,31 +210,46 @@ export class MacAppController {
   async checkPermissions(screenshotPath: string): Promise<MacAutomationPermissions> {
     let accessibility = false;
     let screenRecording = false;
+    let accessibilityError: string | undefined;
+    let screenRecordingError: string | undefined;
 
     try {
-      await this.runAppleScript([
-        'tell application "System Events"',
-        "set accessibilityEnabled to UI elements enabled",
-        "end tell",
-      ]);
-      accessibility = true;
-    } catch {
-      // Report both permissions together instead of stopping at the first failure.
+      accessibility = await this.checkAccessibilityPermission();
+    } catch (error) {
+      accessibilityError = error instanceof Error ? error.message : String(error);
     }
 
     try {
-      await this.screenshot(screenshotPath);
-      screenRecording = true;
-    } catch {
-      // The caller receives a structured result suitable for CLI diagnostics.
+      screenRecording = await this.checkScreenRecordingPermission();
+      if (screenRecording) {
+        await this.screenshot(screenshotPath);
+      }
+    } catch (error) {
+      screenRecordingError = error instanceof Error ? error.message : String(error);
     }
 
-    return { accessibility, screenRecording, screenshotPath };
+    return {
+      accessibility,
+      screenRecording,
+      screenshotPath,
+      diagnostics: {
+        accessibilityCheck: "AXIsProcessTrusted() via /usr/bin/swift",
+        accessibilityError,
+        screenRecordingCheck: "CGPreflightScreenCaptureAccess() via /usr/bin/swift",
+        screenRecordingError,
+        runtimeHosts: {
+          node: process.execPath,
+          osascript: OSASCRIPT_PATH,
+          swift: SWIFT_PATH,
+          screencapture: SCREEN_CAPTURE_PATH,
+        },
+      },
+    };
   }
 
   private async runAppleScript(lines: string[]): Promise<string> {
     const args = lines.flatMap((line) => ["-e", line]);
-    return this.run("/usr/bin/osascript", args);
+    return this.run(OSASCRIPT_PATH, args);
   }
 
   private async getImageSize(imagePath: string): Promise<ImageSize> {
@@ -237,9 +268,41 @@ export class MacAppController {
     return { width, height };
   }
 
-  private async run(command: string, args: string[]): Promise<string> {
+  private async checkAccessibilityPermission(): Promise<boolean> {
+    const output = await this.runSwift([
+      "import ApplicationServices",
+      "print(AXIsProcessTrusted())",
+    ]);
+    return parseBooleanOutput(output, "AXIsProcessTrusted()");
+  }
+
+  private async checkScreenRecordingPermission(): Promise<boolean> {
+    const output = await this.runSwift([
+      "import CoreGraphics",
+      "print(CGPreflightScreenCaptureAccess())",
+    ]);
+    return parseBooleanOutput(output, "CGPreflightScreenCaptureAccess()");
+  }
+
+  private async runSwift(lines: string[]): Promise<string> {
+    const moduleCachePath = `${tmpdir()}/desktop-loop-engineering-swift-module-cache`;
+    await mkdir(moduleCachePath, { recursive: true });
+    return this.run(
+      SWIFT_PATH,
+      ["-e", lines.join("\n")],
+      {
+        CLANG_MODULE_CACHE_PATH: moduleCachePath,
+      },
+    );
+  }
+
+  private async run(command: string, args: string[], extraEnv: NodeJS.ProcessEnv = {}): Promise<string> {
     try {
       const { stdout } = await execFileAsync(command, args, {
+        env: {
+          ...process.env,
+          ...extraEnv,
+        },
         timeout: this.commandTimeoutMs,
       });
       return stdout.trim();
@@ -251,6 +314,16 @@ export class MacAppController {
       );
     }
   }
+}
+
+function parseBooleanOutput(output: string, label: string): boolean {
+  if (output === "true") {
+    return true;
+  }
+  if (output === "false") {
+    return false;
+  }
+  throw new Error(`Could not parse ${label} output: ${output}`);
 }
 
 function delay(milliseconds: number): Promise<void> {
