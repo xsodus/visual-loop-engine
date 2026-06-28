@@ -31,7 +31,7 @@ The repository is structured for people who want to study or extend:
 - Skill folders that document policy separately from implementation
 - Loop-state tracker that requires repeated confirmation before completion
 - CLI harness for repeatable local testing
-- Example archive for domain-specific workflows
+- Reusable skill-based workflows for local automation
 
 ## How It Works
 
@@ -132,8 +132,7 @@ pnpm test
 
 ## Repository Layout
 
-- `skills/` reusable, neutral workflow skills
-- `examples/` archived or domain-specific examples
+- `skills/` installed workflow skills used by Codex and related agents
 - `src/` controller and loop implementation
 - `test/` coverage for loop and controller behavior
 - `scripts/nemo.mjs` interactive skill symlink installer
@@ -144,7 +143,7 @@ pnpm test
 - Prefer reversible actions and explicit confirmation points.
 - Re-capture screenshots after every state-changing action.
 - Avoid hardcoding personal paths, credentials, or machine-specific settings.
-- Keep domain-specific automation examples outside the core framework.
+- Verify each installed skill still matches your intended repository boundary.
 
 ## Future Roadmap
 
@@ -153,12 +152,3 @@ pnpm test
 - Expand test fixtures for screenshot-driven workflows
 - Add structured telemetry for loop decisions and recovery behavior
 - Package the controller and skill templates for easier onboarding
-
-## Examples
-
-Domain-specific examples live under:
-
-- `examples/game-automation/`
-
-These are intentionally separated from the main framework so the repository can
-stay focused on reusable automation architecture.
